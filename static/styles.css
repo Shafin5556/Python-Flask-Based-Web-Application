@@ -1,0 +1,618 @@
+
+/* Reset and Typography */
+body,
+h1,
+button,
+span {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+/* Global Styles */
+body {
+    background-color: #f4f4f4;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Header */
+header {
+    background: #11b398;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+/* Button Styles */
+.button-container {
+    margin-top: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+button {
+    background: #333;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    margin: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.3s ease;
+}
+
+button:hover {
+    background: #555;
+    transform: scale(1.05);
+}
+
+.page-info {
+    text-align: center;
+    margin-top: 20px;
+}
+
+/* Content Wrapper */
+#content-wrapper {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem;
+}
+
+#pdf-list,
+canvas,
+#side-panel {
+    position: fixed;
+    bottom: 0;
+  }
+  
+
+#pdf-list {
+    height: calc(80vh - 160px);
+    overflow-y: auto;
+}
+
+#pdf-list p {
+    cursor: pointer;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid #EEEEEE;
+}
+
+#pdf-list p:hover {
+    background-color: #F1F1F1;
+    color: #4E4FEB;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+#the-canvas {
+    width: 70%; /* Adjust the width as per your preference */
+    height: 80%;
+    display: block;
+    border-radius: 30px; /* Add rounded corners */
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2); /* Add a subtle shadow for depth */
+ /* Add 5% padding to every side */
+    margin: auto; /* Center the element horizontally */
+    position: absolute;
+    top: 80%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center the element vertically */
+    z-index: -1; /* Set a lower z-index to make it a background */
+    transition: width 0.5s, height 0.5s;
+}
+
+
+
+#side-panel {
+    /* Add position:relative to make ::before pseudo-element relative to this */
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    left: 20px; /* Adjust the distance from the right as needed */
+    width: 300px;
+    background-color: transparent; /* Transparent background color */
+    border: none; /* Remove border */
+    border-radius: 10px; /* Border radius */
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3); /* Larger and softer box shadow for depth */
+    padding: 20px; /* Increased padding for a spacious feel */
+    color: #fff; /* Text color */
+    font-family: Arial, sans-serif; /* Use a modern font */
+    overflow: hidden; /* Hide the gradient overflow */
+}
+
+#side-panel::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #007bff, #00aaff); /* Gradient background */
+    filter: blur(10px); /* Apply a blur effect to the gradient */
+    z-index: -1; /* Place the gradient behind the content */
+}
+
+#text-box {
+    background-color: #f5f5f5; /* User message background color */
+    color: #333; /* User message text color */
+    border-radius: 10px;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle box shadow */
+}
+
+/* Style for the response-box */
+#response-box {
+    background-color: #007bff; /* Bot response background color */
+    color: #fff; /* Bot response text color */
+    border-radius: 10px;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle box shadow */
+}
+
+/* Style for the FontAwesome bot icon */
+.bot-icon {
+    font-size: 24px; /* Adjust the icon size as needed */
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+}
+
+/* Add hover effect to the response-box */
+#response-box:hover {
+    background-color: #0056b3; /* Darker blue on hover for a premium feel */
+    cursor: pointer; /* Change cursor to indicate interactivity */
+    transition: background-color 0.3s ease; /* Smooth transition on hover */
+}
+
+
+
+
+
+/* ///////////////////////////////////////////// */
+.card {
+    width: 380px;
+    height: 380px;
+    background: white;
+    border-radius: 32px;
+    padding: 3px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: #604b4a30 0px 70px 30px -50px;
+    transition: all 0.5s ease-in-out;
+  }
+  
+  
+  .card .mail {
+    position: absolute;
+    right: 2rem;
+    top: 1.4rem;
+    background: transparent;
+    border: none;
+  }
+  
+  .card .mail svg {
+    stroke: #fbb9b6;
+    stroke-width: 3px;
+  }
+  
+  .card .mail svg:hover {
+    stroke: #f55d56;
+  }
+  
+  .card .profile-pic {
+    position: absolute;
+    width: calc(100% - 6px);
+    height: calc(100% - 6px);
+    top: 3px;
+    left: 3px;
+    border-radius: 29px;
+    z-index: 1;
+    border: 0px solid #fbb9b6;
+    overflow: hidden;
+    transition: all 0.5s ease-in-out 0.2s, z-index 0.5s ease-in-out 0.2s;
+  }
+  
+  .card .profile-pic img {
+    -o-object-fit: cover;
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+    -o-object-position: 0px 0px;
+    object-position: 0px 0px;
+    transition: all 0.5s ease-in-out 0s;
+  }
+  
+  .card .profile-pic svg {
+    width: 100%;
+    height: 100%;
+    -o-object-fit: cover;
+    object-fit: cover;
+    -o-object-position: 0px 0px;
+    object-position: 0px 0px;
+    transform-origin: 45% 20%;
+    transition: all 0.5s ease-in-out 0s;
+  }
+  
+  .card .bottom {
+    position: absolute;
+    bottom: 3px;
+    left: 3px;
+    right: 3px;
+    background: linear-gradient(135deg, rgba(70,130,180,0.8) 0%, rgba(135,206,250,0.5) 100%);
+    top: 80%;
+    border-radius: 29px;
+    z-index: 2;
+    box-shadow: rgba(96, 75, 74, 0.1882352941) 0px 5px 5px 0px inset;
+    overflow: hidden;
+    transition: all 0.5s cubic-bezier(0.645, 0.045, 0.355, 1) 0s;
+  }
+  
+  .card .bottom .content {
+    position: absolute;
+    bottom: 0;
+    left: 1.5rem;
+    right: 1.5rem;
+    height: 160px;
+  }
+  
+  .card .bottom .content .name {
+    display: block;
+    font-size: 1.2rem;
+    color: white;
+    font-weight: bold;
+  }
+  
+  .card .bottom .content .about-me {
+    display: block;
+    font-size: 0.9rem;
+    color: white;
+    margin-top: 1rem;
+  }
+  
+  .card .bottom .bottom-bottom {
+    position: absolute;
+    bottom: 1rem;
+    left: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .card .bottom .bottom-bottom .social-links-container {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .card .bottom .bottom-bottom .social-links-container svg {
+    height: 20px;
+    fill: white;
+    filter: drop-shadow(0 5px 5px rgba(165, 132, 130, 0.1333333333));
+  }
+  
+  .card .bottom .bottom-bottom .social-links-container svg:hover {
+    fill: #f55d56;
+    transform: scale(1.2);
+  }
+  
+  .card .bottom .bottom-bottom .button {
+    background: rgb(0, 0, 0);
+    color: #ffffff;
+    border: none;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    padding: 15px 30px; 
+    box-shadow: rgba(165, 132, 130, 0.1333333333) 0px 5px 5px 0px;
+  }
+  
+  .card .bottom .bottom-bottom .button:hover {
+    background: #000000;
+    color: white;
+  }
+  
+  .card:hover {
+    border-top-left-radius: 55px;
+  }
+  
+  .card:hover .bottom {
+    top: 20%;
+    border-radius: 80px 29px 29px 29px;
+    transition: all 0.5s cubic-bezier(0.645, 0.045, 0.355, 1) 0.2s;
+  }
+  
+  .card:hover .profile-pic {
+    width: 100px;
+    height: 100px;
+    aspect-ratio: 1;
+    top: 10px;
+    left: 10px;
+    border-radius: 50%;
+    z-index: 3;
+    border: 7px solid #fbb9b6;
+    box-shadow: rgba(96, 75, 74, 0.1882352941) 0px 5px 5px 0px;
+    transition: all 0.5s ease-in-out, z-index 0.5s ease-in-out 0.1s;
+  }
+  
+  .card:hover .profile-pic:hover {
+    transform: scale(1.3);
+    border-radius: 0px;
+  }
+  
+  .card:hover .profile-pic img {
+    transform: scale(2.5);
+    -o-object-position: 0px 25px;
+    object-position: 0px 25px;
+    transition: all 0.5s ease-in-out 0.5s;
+  }
+  
+  .card:hover .profile-pic svg {
+    transform: scale(2.5);
+    transition: all 0.5s ease-in-out 0.5s;
+  }
+
+  .absolute {
+    position: absolute;
+  }
+  
+  .inline-block {
+    display: inline-block;
+  }
+  
+  .loader {
+    display: flex;
+    margin: 0.25em 0;
+  }
+  
+  .w-2 {
+    width: 0.5em;
+  }
+  
+  .dash {
+    animation: dashArray 2s ease-in-out infinite,
+      dashOffset 2s linear infinite;
+  }
+  
+  .spin {
+    animation: spinDashArray 2s ease-in-out infinite,
+      spin 8s ease-in-out infinite,
+      dashOffset 2s linear infinite;
+    transform-origin: center;
+  }
+  
+  @keyframes dashArray {
+    0% {
+      stroke-dasharray: 0 1 359 0;
+    }
+  
+    50% {
+      stroke-dasharray: 0 359 1 0;
+    }
+  
+    100% {
+      stroke-dasharray: 359 1 0 0;
+    }
+  }
+  
+  @keyframes spinDashArray {
+    0% {
+      stroke-dasharray: 270 90;
+    }
+  
+    50% {
+      stroke-dasharray: 0 360;
+    }
+  
+    100% {
+      stroke-dasharray: 270 90;
+    }
+  }
+  
+  @keyframes dashOffset {
+    0% {
+      stroke-dashoffset: 365;
+    }
+  
+    100% {
+      stroke-dashoffset: 5;
+    }
+  }
+  
+  @keyframes spin {
+    0% {
+      rotate: 0deg;
+    }
+  
+    12.5%,
+    25% {
+      rotate: 270deg;
+    }
+  
+    37.5%,
+    50% {
+      rotate: 540deg;
+    }
+  
+    62.5%,
+    75% {
+      rotate: 810deg;
+    }
+  
+    87.5%,
+    100% {
+      rotate: 1080deg;
+    }
+  }
+  .navbar {
+    background-color: white;
+    color: #333;
+    padding: 10px 0;
+    text-align: left;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Style for the AI Teacher text in the navbar */
+.navbar h1 {
+    margin: 0;
+    padding-left: 20px;
+    font-family: 'Arial', sans-serif; /* Choose a modern font-family */
+    text-transform: uppercase; /* Convert text to uppercase for a sleek look */
+    letter-spacing: 2px; /* Add letter spacing for a more modern feel */
+    font-weight: bold; /* Make the text bold for emphasis */
+    font-size: 24px; /* Adjust font size as needed */
+}
+.container {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    height: 100vh;
+}
+
+#enrolledTeachersCount {
+    font-size: 32px; /* Increase the font size */
+    text-align: center;
+    padding-left: 20px; /* Add left padding to move the text to the right */
+    font-weight: bold; /* Make the text bold */
+    font-family: 'Arial', sans-serif; /* Choose a modern font-family */
+    text-transform: uppercase; /* Convert text to uppercase for a sleek look */
+    letter-spacing: 2px; /* Add letter spacing for a modern feel */
+}
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+#pdf-list {
+    display: none;
+    position: absolute;
+    background-color: #f0f0f0; /* Background color of the PDF list */
+    border: 1px solid #ccc;
+    padding: 10px;
+    z-index: 1; /* Ensure it appears above other content */
+    bottom: 100%; /* Position it above the button */
+    left: 0;
+    min-width: 150px; /* Adjust the width as needed */
+    box-shadow: 0px -2px 6px rgba(0, 0, 0, 0.2); /* Add shadow for effect */
+}
+
+#toggle-pdf-list {
+    cursor: pointer;
+}
+
+/* Style the "mac-dock" container */
+/* Style the "mac-dock" container */
+/* Style the "mac-dock" container */
+/* Style the "mac-dock" container */
+/* Style the "mac-dock" container */
+.mac-dock {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.9) 0%, rgba(245, 245, 245, 0.9) 100%); /* Slightly transparent background */
+    padding: 10px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2); /* Added elevation */
+    position: fixed; /* Change to fixed positioning */
+    bottom: 20px;
+    left: 25%;
+    right: 25%;
+    width: 50%;
+    border-radius: 24px; /* Increased border radius for a more rounded look */
+    transition: box-shadow 0.3s ease; /* Added transition for hover effect */
+}
+
+
+.mac-dock:hover {
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.3); /* Hover effect with increased elevation */
+}
+
+.mac-dock button {
+    background-color: transparent; /* White background color */
+    color: #3498db; /* Blue text color */
+    border: none; /* Remove the border */
+    padding: 10px 20px;
+    margin: 0 5px; /* Add spacing between buttons */
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 24px; /* Increased border radius for a more rounded look */
+    transition: background-color 0.3s, color 0.3s, border-radius 0.3s; /* Added transitions for hover effect */
+}
+
+.mac-dock button:hover {
+    background: linear-gradient(to bottom, rgba(52, 152, 219, 0.5), rgba(41, 128, 185, 0.5)); /* Blue transparent gradient background on hover */
+    color: #ffffff; /* White text color on hover */
+    border-radius: 24px; /* Rounded corners on hover */
+}
+
+
+
+
+.dropdown button {
+    background-color: transparent; /* White background color for the dropdown button */
+    color: #27ae60; /* Green text color */
+    border: none; /* Remove the border */
+    border-radius: 3px;
+}
+
+/* Style the dropdown content */
+/* Style the dropdown content */
+/* Style the dropdown content */
+/* Style the dropdown content */
+/* Style the dropdown content */
+/* Style the dropdown content */
+.dropdown-content {
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    box-shadow: 0px -4px 12px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    position: absolute;
+    bottom: 100%;
+    left: -10px;
+    right: -10px;
+    z-index: 1;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s, transform 0.3s;
+    width: calc(130% + 20px);
+    overflow-x: hidden; /* Hide horizontal scrollbar */
+}
+
+
+/* Show the dropdown on hover */
+.dropdown:hover .dropdown-content {
+    opacity: 1;
+    transform: translateY(0);
+}
+/* Style the scrollbar */
+.dropdown-content::-webkit-scrollbar {
+    width: 8px; /* Width of the scrollbar */
+}
+
+/* Style the scrollbar thumb (the draggable part) */
+.dropdown-content::-webkit-scrollbar-thumb {
+    background-color: #3498db; /* Color of the scrollbar thumb */
+    border-radius: 4px; /* Rounded corners for the thumb */
+}
+
+/* Style the scrollbar track (the area behind the thumb) */
+
+
+
+/* Add responsive design */
+@media (max-width: 768px) {
+    .mac-dock {
+        flex-direction: column;
+        align-items: center;
+        padding: 10px; /* Adjust the padding for top and bottom spacing */
+    }
+
+    .mac-dock button {
+        margin: 5px 0;
+    }
+}
+.hide-element {
+    display: none;
+}

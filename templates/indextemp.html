@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AI Teacher</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            padding: 1em;
+            background-color: #3B81F6;
+            color: #fff;
+            text-align: center;
+        }
+
+        form {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1em;
+        }
+
+        input[type="file"],
+        input[type="submit"] {
+            margin: 0.5em;
+            padding: 0.5em;
+        }
+
+        #the-canvas {
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 1em auto;
+            display: block;
+        }
+
+        #text-box,
+        #response-box {
+            border: 1px solid #ccc;
+            margin: 1em auto;
+            padding: 1em;
+            max-width: 800px;
+        }
+
+        div {
+            text-align: center;
+        }
+
+        button {
+            background-color: #3B81F6;
+            color: #fff;
+            padding: 0.6em 1.2em;
+            margin: 0.2em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2a5bb0;
+        }
+
+        span {
+            margin: 0 1em;
+        }
+    </style>
+    <script src="//mozilla.github.io/pdf.js/build/pdf.js"></script>
+</head>
+
+<body>
+
+    <h1>AI Teacher</h1>
+
+    <form action="/" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit" value="Upload">
+    </form>
+
+    <div>
+        <button id="prev"><i class="fas fa-arrow-left"></i> Previous</button>
+        <button id="next">Next <i class="fas fa-arrow-right"></i></button>
+        <button id="extract-text">Extract Text</button>
+        <button id="speak">Speak</button>
+
+        <button id="start-teaching">Start Teaching</button>
+
+        &nbsp; &nbsp;
+        <span>Page: <span id="page_num"></span> / <span id="page_count"></span></span>
+    </div>
+
+
+    <canvas id="the-canvas"></canvas>
+
+    <div id="text-box" style="border: 1px solid black; margin-top: 20px; padding: 10px;">
+
+    </div>
+    <div id="response-box" style="border: 1px solid black; margin-top: 20px; padding: 10px;">
+
+    </div>
+    <script>
+        // [Previous JavaScript code]
+
+        async function autoTeaching() {
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                pageNum = i;
+                queueRenderPage(pageNum);
+                await new Promise(r => setTimeout(r, 1000));  // Wait for rendering
+                extractTextFromPage(pageNum);
+                await new Promise(r => setTimeout(r, 1000));  // Wait for text extraction
+                await speakPage();
+            }
+        }
+
+        document.getElementById("start-teaching").addEventListener("click", autoTeaching);
+    </script>
+    <script>
+        var pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '//mozilla.github.io/pdf.js/build/pdf.worker.js';
+
+        var pdfDoc = null,
+            pageNum = 1,
+            pageRendering = false,
+            pageNumPending = null,
+            scale = 0.8,
+            canvas = document.getElementById('the-canvas'),
+            ctx = canvas.getContext('2d');
+
+        var url = "{{ url_for('uploaded_file', filename=filename) if filename }}";
+
+        function renderPage(num) {
+            pageRendering = true;
+            pdfDoc.getPage(num).then(function (page) {
+                const maxWidth = 800; // maximum width you want
+                const maxHeight = 600; // maximum height you want
+
+                var viewport = page.getViewport({ scale: 1 });
+                var desiredScale = Math.min(maxWidth / viewport.width, maxHeight / viewport.height);
+
+                viewport = page.getViewport({ scale: desiredScale });
+
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                var renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                var renderTask = page.render(renderContext);
+
+                renderTask.promise.then(function () {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+            });
+            document.getElementById('page_num').textContent = num;
+        }
+
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        function onPrevPage() {
+            if (pageNum <= 1) {
+                return;
+            }
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+        document.getElementById('prev').addEventListener('click', onPrevPage);
+
+        function onNextPage() {
+            if (pageNum >= pdfDoc.numPages) {
+                return;
+            }
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+        document.getElementById('next').addEventListener('click', onNextPage);
+
+        function extractTextFromPage(pageNum) {
+            pdfDoc.getPage(pageNum).then(function (page) {
+                return page.getTextContent();
+            }).then(function (textContent) {
+                let textItems = textContent.items;
+                let finalString = '';
+
+                for (let i = 0; i < textItems.length; i++) {
+                    let item = textItems[i];
+                    finalString += item.str;
+                }
+
+                console.log(finalString);
+                document.getElementById("text-box").textContent = finalString;
+            });
+        }
+
+        document.getElementById("extract-text").addEventListener("click", function () {
+            extractTextFromPage(pageNum);
+        });
+
+        if (url) {
+            pdfjsLib.getDocument(url).promise.then(function (pdfDoc_) {
+                pdfDoc = pdfDoc_;
+                document.getElementById('page_count').textContent = pdfDoc.numPages;
+                renderPage(pageNum);
+            });
+        }
+
+        async function speakPage() {
+            const pageNum = document.getElementById("page_num").textContent;
+            const extractedText = document.getElementById("text-box").textContent;
+
+            const response = await fetch(`/speak`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    page: pageNum,
+                    text: extractedText
+                })
+            });
+
+            const { speech } = await response.json();
+            document.getElementById("response-box").textContent = speech;
+
+            return new Promise((resolve, reject) => {
+                var speechSynthesis = window.speechSynthesis;
+                var utterThis = new SpeechSynthesisUtterance(speech);
+                utterThis.onend = function (event) {
+                    console.log('SpeechSynthesisUtterance.onend');
+                    resolve();
+                }
+                utterThis.onerror = function (event) {
+                    console.error('SpeechSynthesisUtterance.onerror');
+                    reject(new Error("SpeechSynthesisUtterance experienced an error."));
+                }
+                speechSynthesis.speak(utterThis);
+            });
+        }
+
+
+
+        document.getElementById("speak").addEventListener("click", speakPage);
+    </script>
+
+    <script type="module">
+        import Chatbot from "http://localhost:5500/script.js";
+        Chatbot.init({
+            chatflowid: "3c43da19-7266-4f21-82a1-c7d67027aebd",
+            apiHost: "http://localhost:3000",
+            chatflowConfig: {
+                // topK: 2
+            },
+            theme: {
+                button: {
+                    backgroundColor: "#3B81F6",
+                    right: 20,
+                    bottom: 20,
+                    size: "medium",
+                    iconColor: "white",
+                    customIconSrc: "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/svg/google-messages.svg",
+                },
+                chatWindow: {
+                    welcomeMessage: "Hello! I am your AI Teacher. Specialized in Programming and problem solving (Course Code: CSE-113)",
+                    backgroundColor: "#ffffff",
+                    height: 700,
+                    width: 400,
+                    fontSize: 16,
+                    poweredByTextColor: "#303235",
+                    botMessage: {
+                        backgroundColor: "#f7f8ff",
+                        textColor: "#303235",
+                        showAvatar: true,
+                        avatarSrc: "http://localhost:3000/static/media/robot.3e38acc0493763eacabe.png",
+                    },
+                    userMessage: {
+                        backgroundColor: "#3B81F6",
+                        textColor: "#ffffff",
+                        showAvatar: true,
+                        avatarSrc: "https://raw.githubusercontent.com/zahidkhawaja/langchain-chat-nextjs/main/public/usericon.png",
+                    },
+                    textInput: {
+                        placeholder: "Type your question",
+                        backgroundColor: "#ffffff",
+                        textColor: "#303235",
+                        sendButtonColor: "#3B81F6",
+                    }
+                }
+            }
+        })
+    </script>
+
+</body>
+
+</html>

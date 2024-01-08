@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AI Teacher</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <script src="//mozilla.github.io/pdf.js/build/pdf.mjs" type="module"></script>
+
+</head>
+
+<body>
+    <div class="hidden">
+        <header class="navbar">
+            <h1>AI Teacher</h1>
+        </header>
+
+        <div class="mac-dock">
+            <button id="prev"><i class="fas fa-arrow-left"></i> Previous</button>
+            <button id="next"><i class="fas fa-arrow-right"></i> Next</button>
+            <button id="extract-text"><i class="fas fa-file-text"></i> Extract Text</button>
+            <button id="speak"><i class="fas fa-volume-up"></i> Speak</button>
+            <button id="start-teaching"><i class="fas fa-chalkboard-teacher"></i> Start Teaching</button>
+            <button id="pause-resume"><i class="fas fa-pause"></i> Pause</button>
+            <div class="dropdown">
+                <button id="toggle-pdf-list"><i class="fas fa-list-alt"></i> Show PDF List</button>
+                <div id="pdf-list" class="dropdown-content">
+                    <!-- PDF list content here -->
+                </div>
+            </div>
+
+        </div>
+
+        <div class="page-info">
+            <span id="page_num"></span> /<span id="page_count"></span></span>
+        </div>
+
+        <!-- Original Content from here -->
+
+
+
+
+
+
+
+
+    </div>
+
+    <canvas id="the-canvas"></canvas>
+    <div id="side-panel">
+        <div id="text-box">Text Box</div>
+        <div id="response-box">
+            Response Box
+            <i class="fas fa-robot bot-icon"></i>
+        </div>
+    </div>
+
+
+
+    <script type="module">
+        import { pdfjsLib } from '//mozilla.github.io/pdf.js/build/pdf.mjs';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '//mozilla.github.io/pdf.js/build/pdf.worker.mjs';
+    
+        var pdfDoc = null,
+            pageNum = 1,
+            pageRendering = false,
+            pageNumPending = null,
+            scale = 0.8,
+            canvas = document.getElementById('the-canvas'),
+            ctx = canvas.getContext('2d');
+    
+        function loadPDFFromList(filename) {
+            fetch(`/get_pdf/${filename}`)
+                .then(response => response.arrayBuffer())
+                .then(buffer => {
+                    pdfjsLib.getDocument({ data: buffer }).promise.then(function (newPdfDoc) {
+                        pdfDoc = newPdfDoc;
+                        document.getElementById('page_count').textContent = pdfDoc.numPages;
+                        renderPage(1);
+                    });
+                });
+        }
+    
+        function renderPage(num) {
+            pageRendering = true;
+            pdfDoc.getPage(num).then(function (page) {
+                const maxWidth = 650;
+                const maxHeight = 600;
+                var viewport = page.getViewport({ scale: 1 });
+                var desiredScale = Math.min(maxWidth / viewport.width, maxHeight / viewport.height);
+                viewport = page.getViewport({ scale: desiredScale });
+                canvas.height = 600;
+                canvas.width = 650;
+                var renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                var renderTask = page.render(renderContext);
+                renderTask.promise.then(function () {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+            });
+            document.getElementById('page_num').textContent = num;
+        }
+    
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+    
+        function onPrevPage() {
+            if (pageNum <= 1) {
+                return;
+            }
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+    
+        function onNextPage() {
+            if (pageNum >= pdfDoc.numPages) {
+                return;
+            }
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+    
+        function extractTextFromPage(pageNum) {
+            pdfDoc.getPage(pageNum).then(function (page) {
+                return page.getTextContent();
+            }).then(function (textContent) {
+                let textItems = textContent.items;
+                let finalString = '';
+                let lastY = -1; 
+                for (let i = 0; i < textItems.length; i++) {
+                    let item = textItems[i];
+                    const itemY = item.transform[5];
+                    if (lastY !== -1 && lastY !== itemY) {
+                        finalString += '\n';
+                    }
+                    lastY = itemY;
+    
+                    finalString += item.str;
+                }
+                document.getElementById("text-box").textContent = finalString;
+                
+                speechQueue = finalString.split('.');
+                currentSpeechIndex = 0;
+            });
+        }
+    
+        // Expose functions to global scope
+        window.loadPDFFromList = loadPDFFromList;
+        window.onPrevPage = onPrevPage;
+        window.onNextPage = onNextPage;
+        window.extractTextFromPage = extractTextFromPage;
+    </script>
+
+<script>
+    // Non-Module Script
+
+    // Function to display subtitles
+    function displaySubtitle(text) {
+        const responseBox = document.getElementById('response-box');
+        const subtitlesContainer = document.getElementById('subtitles-container');
+        responseBox.textContent = text;
+        subtitlesContainer.style.display = 'block';
+        setTimeout(() => {
+            subtitlesContainer.style.display = 'none';
+        }, 5000);
+    }
+
+    // Function to check if canvas is empty
+    function isCanvasEmpty(canvas) {
+        const context = canvas.getContext('2d');
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height).data;
+        return !Array.from(imageData).some((channel) => channel !== 0);
+    }
+
+    // Function to restore the last opened PDF
+    function restoreLastOpenedPDF() {
+        const lastOpenedPDF = localStorage.getItem('lastOpenedPDF');
+        if (lastOpenedPDF) {
+            window.loadPDFFromList(lastOpenedPDF);
+        }
+    }
+
+    // Add event listeners
+    window.onload = function () {
+        restoreLastOpenedPDF();
+    };
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'ArrowLeft') {
+            window.onPrevPage();
+        } else if (event.key === 'ArrowRight') {
+            window.onNextPage();
+        }
+    });
+
+    // Mouse movement detection for UI elements
+    let timer;
+    let canvasActive = true;
+
+    function hideElements() {
+        if (!isCanvasEmpty(document.getElementById('the-canvas'))) {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                const elementsToHide = document.querySelectorAll('.hidden');
+                elementsToHide.forEach((element) => {
+                    element.style.display = 'none';
+                });
+                canvasActive = false;
+            }, 1000);
+        }
+    }
+
+    document.addEventListener('mousemove', () => {
+        if (!isCanvasEmpty(document.getElementById('the-canvas'))) {
+            clearTimeout(timer);
+            const elementsToHide = document.querySelectorAll('.hidden');
+            elementsToHide.forEach((element) => {
+                element.style.display = 'block';
+            });
+            canvasActive = true;
+            hideElements();
+        }
+    });
+
+    hideElements();
+
+    // Toggle PDF List
+    const togglePdfListButton = document.getElementById("toggle-pdf-list");
+    const pdfList = document.getElementById("pdf-list");
+
+    togglePdfListButton.addEventListener("click", function () {
+        if (pdfList.style.display === "block") {
+            pdfList.style.display = "none";
+        } else {
+            pdfList.style.display = "block";
+        }
+    });
+
+    document.addEventListener("click", function (event) {
+        if (!pdfList.contains(event.target) && event.target !== togglePdfListButton) {
+            pdfList.style.display = "none";
+        }
+    });
+
+    // Speech and teaching functionality
+    let isPaused = false;
+    let speechQueue = [];
+    let isTeaching = false;
+    let currentSpeechIndex = 0;
+    let currentAudio = null;
+
+    document.getElementById("start-teaching").addEventListener("click", autoTeaching);
+
+    document.getElementById("pause-resume").addEventListener("click", () => {
+        isPaused = !isPaused;
+        document.getElementById("pause-resume").innerText = isPaused ? "Resume" : "Pause";
+        if (isPaused && currentAudio) {
+            currentAudio.pause();
+        } else if (currentAudio) {
+            currentAudio.play();
+        }
+    });
+
+    async function autoTeaching() {
+            isTeaching = !isTeaching;
+            document.getElementById("start-teaching").innerText = isTeaching ? "Stop Teaching" : "Start Teaching";
+            if (!isTeaching) {
+                return;
+            }
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                if (!isTeaching) {
+                    break;
+                }
+                while (isPaused) {
+                    await new Promise(r => setTimeout(r, 500));
+                }
+                pageNum = i;
+                queueRenderPage(pageNum);
+                await new Promise(r => setTimeout(r, 1000));
+                extractTextFromPage(pageNum);
+                await new Promise(r => setTimeout(r, 1000));
+                await speakPage();
+            }
+        }
+    async function speakPage() {
+            const speakButton = document.getElementById("speak");
+            speakButton.textContent = "Processing...";
+            const pageNum = document.getElementById("page_num").textContent;
+            const extractedText = document.getElementById("text-box").textContent;
+            const response = await fetch(`/speak`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    page: pageNum,
+                    text: extractedText
+                })
+            });
+            const { speech } = await response.json();
+            document.getElementById("response-box").textContent = speech;
+            speechQueue = speech.split('. ');
+            currentSpeechIndex = 0;
+            for (currentSpeechIndex; currentSpeechIndex < speechQueue.length; currentSpeechIndex++) {
+                while (isPaused) {
+                    await new Promise(r => setTimeout(r, 500));
+                    if (currentAudio) {
+                        currentAudio.pause();
+                    }
+                }
+                await new Promise(async (resolve, reject) => {
+                    try {
+                        const audio = await fetchHumanoidVoice(speechQueue[currentSpeechIndex]);
+                        audio.addEventListener('ended', () => {
+                            resolve();
+                        });
+                        if (currentAudio) {
+                            currentAudio.pause();
+                            currentAudio.currentTime = 0;
+                        }
+                        currentAudio = audio;
+
+                        currentAudio.play(); // This will start playing the audio
+
+                        speakButton.textContent = "Speaking...";
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
+            }
+            speakButton.textContent = "Speak";
+        }       
+
+    
+
+    async function fetchPDFList() {
+        const res = await fetch('/get_pdfs');
+        const data = await res.json();
+        const pdfListDiv = document.getElementById('pdf-list');
+        pdfListDiv.innerHTML = data.map(file => `<p id="${file}">${file}</p>`).join('');
+        document.querySelectorAll("#pdf-list p").forEach(element => {
+            element.addEventListener("click", function () {
+                const filename = this.id;
+                window.loadPDFFromList(filename);
+            });
+        });
+    }
+    async function fetchHumanoidVoice(text) {
+            return new Promise(async (resolve, reject) => {
+                const voiceId = 'eSAADzKNb1vbsLV5SCUJ'; // Replace with the actual voice ID
+                const apiKey = '980c63b1108ebae8554d39d5591fad14'; // Replace with your API key
+                const settings = {
+                    method: 'POST',
+                    headers: {
+                        'accept': 'audio/mpeg',
+                        'xi-api-key': apiKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        model_id: 'eleven_monolingual_v1',
+                        voice_settings: {
+                            stability: 0.9,
+                            similarity_boost: 0.9
+                        }
+                    })
+                };
+                try {
+                    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?optimize_streaming_latency=4`, settings);
+                    if (response.ok) {
+                        const audioBlob = await response.blob();
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audio = new Audio(audioUrl);
+                        resolve(audio); // Only resolve, do not play
+                    } else {
+                        reject(new Error(`Failed to fetch humanoid voice: ${response.statusText}`));
+                    }
+                } catch (err) {
+                    reject(err);
+                }
+
+            });
+        }
+
+    fetchPDFList();
+
+    document.getElementById("speak").addEventListener("click", speakPage);
+
+    // Event listeners for previous and next page buttons
+    document.getElementById('prev').addEventListener('click', window.onPrevPage);
+    document.getElementById('next').addEventListener('click', window.onNextPage);
+
+    // Function to extract text from a page
+    document.getElementById("extract-text").addEventListener("click", function () {
+        window.extractTextFromPage(pageNum);
+    });
+
+    // Include any other non-module JavaScript code here...
+</script>
+
+
+    <script type="module">
+        import Chatbot from "https://cdn.zohirrayhan.com/script.js"
+        Chatbot.init({
+            chatflowid: "043d5bd7-472f-4229-84a6-b02ae7722677",
+            apiHost: "https://api.zohirrayhan.com",
+
+            chatflowConfig: {
+                // topK: 2
+            },
+            theme: {
+                button: {
+                    backgroundColor: "#3B81F6",
+                    right: 20,
+                    bottom: 20,
+                    size: "medium",
+                    iconColor: "white",
+                    customIconSrc: "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/svg/google-messages.svg",
+                },
+                chatWindow: {
+                    welcomeMessage: "Hello! I am your AI Teacher. Specialized in Programming and problem solving (Course Code: CSE-113)",
+                    backgroundColor: "#ffffff",
+                    height: 700,
+                    width: 400,
+                    fontSize: 16,
+                    poweredByTextColor: "#303235",
+                    botMessage: {
+                        backgroundColor: "#f7f8ff",
+                        textColor: "#303235",
+                        showAvatar: true,
+                        avatarSrc: "https://creazilla-store.fra1.digitaloceanspaces.com/cliparts/1556033/robot-head-clipart-xl.png",
+                    },
+                    userMessage: {
+                        backgroundColor: "#3B81F6",
+                        textColor: "#ffffff",
+                        showAvatar: true,
+                        avatarSrc: "https://raw.githubusercontent.com/zahidkhawaja/langchain-chat-nextjs/main/public/usericon.png",
+                    },
+                    textInput: {
+                        placeholder: "Type your question",
+                        backgroundColor: "#ffffff",
+                        textColor: "#303235",
+                        sendButtonColor: "#3B81F6",
+                    }
+                }
+            }
+        })
+    </script>
+
+</body>
+
+</html>
